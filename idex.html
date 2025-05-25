@@ -1,0 +1,283 @@
+import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { User, Clock, UserCheck, UserX, BookOpen, Home, LogOut, LogIn } from "lucide-react"
+
+const initialTeachers = [
+  { name: "이명용T", status: "교무실에 있음", password: "0101", subject: "수학" },
+  { name: "정평강T", status: "교무실에 있음", password: "0101", subject: "물리" },
+  { name: "조형일T", status: "교무실에 있음", password: "0101", subject: "사회" },
+  { name: "김성현T", status: "교무실에 있음", password: "0101", subject: "역사" },
+  { name: "박상희T", status: "교무실에 있음", password: "0101", subject: "생명" },
+  { name: "이소라T", status: "교무실에 있음", password: "0101", subject: "국어" },
+  { name: "서혁진T", status: "교무실에 있음", password: "0101", subject: "수학" },
+  { name: "장건기T", status: "교무실에 있음", password: "0101", subject: "영어" },
+]
+
+const statusConfig = {
+  "교무실에 있음": { color: "bg-green-100 text-green-800 border-green-300", icon: Home },
+  "부재중": { color: "bg-red-100 text-red-800 border-red-300", icon: UserX },
+  "수업 중": { color: "bg-blue-100 text-blue-800 border-blue-300", icon: BookOpen },
+  "학교에 없음": { color: "bg-gray-100 text-gray-800 border-gray-300", icon: UserX },
+}
+
+export default function TeacherDashboard() {
+  const [teachers, setTeachers] = useState(initialTeachers)
+  const [currentView, setCurrentView] = useState("student")
+  const [loggedInTeacher, setLoggedInTeacher] = useState(null)
+  const [loginForm, setLoginForm] = useState({ name: "", password: "" })
+  const [loginError, setLoginError] = useState("")
+
+  const updateTeacherStatus = (status) => {
+    if (!loggedInTeacher) return
+    const updatedTeachers = teachers.map((t) =>
+      t.name === loggedInTeacher.name ? { ...t, status } : t
+    )
+    setTeachers(updatedTeachers)
+    setLoggedInTeacher({ ...loggedInTeacher, status })
+  }
+
+  const handleLogin = (e) => {
+    e.preventDefault()
+    const teacher = teachers.find(
+      (t) => {
+        const nameMatch = t.name.toLowerCase() === loginForm.name.toLowerCase() || 
+                         t.name.toLowerCase().replace('t', '') === loginForm.name.toLowerCase()
+        return nameMatch && t.password === loginForm.password
+      }
+    )
+    if (teacher) {
+      setLoggedInTeacher(teacher)
+      setCurrentView("dashboard")
+      setLoginForm({ name: "", password: "" })
+      setLoginError("")
+    } else {
+      setLoginError("이름 또는 비밀번호가 올바르지 않습니다.")
+    }
+  }
+
+  const handleLogout = () => {
+    setLoggedInTeacher(null)
+    setCurrentView("student")
+  }
+
+  const getStatusStats = () => {
+    const stats = {}
+    teachers.forEach(teacher => {
+      stats[teacher.status] = (stats[teacher.status] || 0) + 1
+    })
+    return stats
+  }
+
+  if (currentView === "login") {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+          <CardHeader className="text-center pb-4">
+            <div className="mx-auto w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+              <LogIn className="w-8 h-8 text-indigo-600" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-gray-800">선생님 로그인</CardTitle>
+            <p className="text-gray-600 text-sm">이름과 비밀번호를 입력하세요</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">이름</Label>
+                <Input
+                  placeholder="이름을 입력해주세요"
+                  value={loginForm.name}
+                  onChange={(e) => setLoginForm({ ...loginForm, name: e.target.value })}
+                  className="h-11"
+                  onKeyPress={(e) => e.key === 'Enter' && handleLogin(e)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">비밀번호</Label>
+                <Input
+                  type="password"
+                  placeholder="비밀번호를 입력하세요"
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                  className="h-11"
+                  onKeyPress={(e) => e.key === 'Enter' && handleLogin(e)}
+                />
+              </div>
+              {loginError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-red-600 text-sm">{loginError}</p>
+                </div>
+              )}
+              <div className="space-y-3 pt-2">
+                <Button onClick={handleLogin} className="w-full h-11 bg-indigo-600 hover:bg-indigo-700">
+                  로그인
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setCurrentView("student")} 
+                  className="w-full h-11"
+                >
+                  돌아가기
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+    )
+  }
+
+  if (currentView === "dashboard" && loggedInTeacher) {
+    const StatusIcon = statusConfig[loggedInTeacher.status]?.icon || Home
+    
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-xl border-0 bg-white/90 backdrop-blur-sm">
+          <CardHeader className="text-center pb-4">
+            <div className="mx-auto w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+              <User className="w-8 h-8 text-emerald-600" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-gray-800">
+              {loggedInTeacher.name}님
+            </CardTitle>
+            <p className="text-gray-600 text-sm">{loggedInTeacher.subject} 담당</p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <Label className="text-sm font-medium text-gray-700 block mb-2">현재 상태</Label>
+              <div className="flex items-center gap-2">
+                <StatusIcon className="w-5 h-5" />
+                <span className="font-bold text-lg">{loggedInTeacher.status}</span>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-gray-700">상태 변경</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  onClick={() => updateTeacherStatus("교무실에 있음")}
+                  variant={loggedInTeacher.status === "교무실에 있음" ? "default" : "outline"}
+                  className="h-12 text-sm"
+                >
+                  <Home className="w-4 h-4 mr-1" />
+                  교무실
+                </Button>
+                <Button 
+                  onClick={() => updateTeacherStatus("수업 중")}
+                  variant={loggedInTeacher.status === "수업 중" ? "default" : "outline"}
+                  className="h-12 text-sm"
+                >
+                  <BookOpen className="w-4 h-4 mr-1" />
+                  수업 중
+                </Button>
+                <Button 
+                  onClick={() => updateTeacherStatus("부재중")}
+                  variant={loggedInTeacher.status === "부재중" ? "default" : "outline"}
+                  className="h-12 text-sm"
+                >
+                  <UserX className="w-4 h-4 mr-1" />
+                  부재중
+                </Button>
+                <Button 
+                  onClick={() => updateTeacherStatus("학교에 없음")}
+                  variant={loggedInTeacher.status === "학교에 없음" ? "default" : "outline"}
+                  className="h-12 text-sm"
+                >
+                  <UserX className="w-4 h-4 mr-1" />
+                  학교에 없음
+                </Button>
+              </div>
+            </div>
+            
+            <Button 
+              variant="destructive" 
+              onClick={handleLogout} 
+              className="w-full h-11 mt-8"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              로그아웃
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
+    )
+  }
+
+  const stats = getStatusStats()
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">선생님 현황판</h1>
+            <p className="text-gray-600">실시간 선생님 상태를 확인하세요</p>
+          </div>
+          <Button 
+            onClick={() => setCurrentView("login")}
+            className="bg-indigo-600 hover:bg-indigo-700 h-11 px-6"
+          >
+            <LogIn className="w-4 h-4 mr-2" />
+            선생님 로그인
+          </Button>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {Object.entries(statusConfig).map(([status, config]) => {
+            const Icon = config.icon
+            const count = stats[status] || 0
+            return (
+              <Card key={status} className="border-0 shadow-sm bg-white/80">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${config.color.split(' ')[0]} ${config.color.split(' ')[0].replace('bg-', 'bg-').replace('100', '200')}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-800">{count}</p>
+                      <p className="text-xs text-gray-600">{status}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+
+        {/* Teacher Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {teachers.map((teacher) => {
+            const statusInfo = statusConfig[teacher.status]
+            const StatusIcon = statusInfo.icon
+            
+            return (
+              <Card key={teacher.name} className="border-0 shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white/90 backdrop-blur-sm">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center">
+                      <User className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg font-bold text-gray-800">{teacher.name}</CardTitle>
+                      <p className="text-sm text-gray-600">{teacher.subject}</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium border ${statusInfo.color}`}>
+                    <StatusIcon className="w-4 h-4" />
+                    {teacher.status}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      </div>
+    </main>
+  )
+}
